@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Insiel Monitor</title>
+<meta name="description" content="Portal do cliente — monitoramento de energia, conforto e estoque crítico · Insiel Tecnologia Eletrônica">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F7FA; --surface:#FFFFFF; --surface2:#EEF2F6; --ink:#0A1A2A; --text:#2B3640; --muted:#5B6773; --line:#D9E0E7;
+  --brand:#0078B5; --brand-dark:#006AAC; --brand-soft:#E3F1F9; --accent:#DF412B;
+  --ok:#1E8E5A; --ok-soft:#E1F4EA; --warn:#B7791F; --warn-soft:#FBF0DB; --crit:#D23428; --crit-soft:#FBE4E2;
+  --shadow:0 1px 2px rgba(10,26,42,.06),0 4px 14px rgba(10,26,42,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.5}
+h1,h2,h3{font-family:'Sora',system-ui,sans-serif;color:var(--ink);margin:0;line-height:1.2}
+h1{font-size:21px} h2{font-size:16px;margin-bottom:10px} h3{font-size:14px}
+button,select,input{font-family:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+.top{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.topin{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;height:62px;padding:0 16px}
+.marca{display:flex;align-items:center;gap:10px}
+.marca img{height:40px}
+.marca .t{font-family:'Sora';font-weight:700;font-size:16px;color:var(--ink);line-height:1.1}
+.marca .s{font-size:11.5px;color:var(--muted)}
+.sp{flex:1}
+.cli{text-align:right;line-height:1.2}
+.cli .n{font-family:'Sora';font-weight:600;color:var(--ink);font-size:14px}
+.cli .l{font-size:12px;color:var(--muted)}
+.cli select{border:1px solid var(--line);border-radius:7px;padding:3px 6px;background:var(--bg);color:var(--ink);font-size:12.5px;max-width:220px}
+nav{background:var(--surface);border-bottom:1px solid var(--line)}
+nav .in{max-width:1180px;margin:0 auto;padding:0 16px;display:flex;gap:2px;overflow-x:auto}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:11px 13px 8px;color:var(--muted);font-weight:500;font-size:14px;white-space:nowrap}
+nav button.on{color:var(--brand-dark);border-bottom-color:var(--brand);font-weight:600}
+main{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+.kpi .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font-family:'Sora';font-size:25px;font-weight:600;color:var(--ink);margin-top:2px;line-height:1.15}
+.kpi .v small{font-size:14px;font-weight:500;color:var(--muted);margin-left:3px}
+.kpi .d{font-size:12.5px;color:var(--muted);margin-top:3px}
+.kpi.ok .v{color:var(--ok)} .kpi.crit .v{color:var(--crit)} .kpi.warn .v{color:var(--warn)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px}
+.grid2 .panel{margin-bottom:0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.chart{position:relative;height:270px}
+.chart.sm{height:210px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{background:var(--surface);border:0;padding:6px 12px;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--brand);color:#fff}
+.btn{background:var(--brand);color:#fff;border:0;border-radius:9px;padding:9px 14px;font-weight:600;font-size:14px}
+.btn.sec{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:5px 10px;font-size:13px;border-radius:7px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.crit{background:var(--crit-soft);color:var(--crit)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.muted{background:var(--surface2);color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.zonas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.zona{border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--bg)}
+.zona .n{font-size:12.5px;color:var(--muted)}
+.zona .v{font-family:'Sora';font-size:22px;font-weight:600;color:var(--ink)}
+.zona .u{font-size:12.5px;color:var(--muted)}
+.aviso{border-left:4px solid var(--warn);background:var(--warn-soft);border-radius:0 9px 9px 0;padding:9px 13px;margin-bottom:8px;font-size:14px}
+.aviso.crit{border-color:var(--crit);background:var(--crit-soft)}
+.aviso.ok{border-color:var(--ok);background:var(--ok-soft)}
+.aviso .t{font-weight:600;color:var(--ink)}
+.aviso .d{font-size:12.5px;color:var(--muted)}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.empty{color:var(--muted);padding:22px;text-align:center}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:150px}
+.fld label{font-size:12px;color:var(--muted);font-weight:500}
+.fld input,.fld select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:14px}
+.login{max-width:380px;margin:70px auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;box-shadow:var(--shadow)}
+.login img{height:64px;display:block;margin:0 auto 6px}
+.login h1{text-align:center;margin-bottom:2px}
+.login p.s{text-align:center;color:var(--muted);font-size:13px;margin:0 0 18px}
+.login .fld{margin-bottom:11px}
+.login .lk{background:none;border:0;color:var(--brand);font-size:13px;padding:0;margin-top:12px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;z-index:99;max-width:90vw}
+.rodape{font-size:12px;color:var(--muted);margin-top:18px}
+.cab-imp{display:none}
+@media (max-width:820px){ .grid2{grid-template-columns:1fr} .marca .s{display:none} }
+@media print{
+  .top .sp,.top .cli select,nav,.seg,.btn,.noprint{display:none!important}
+  .top{position:static;border:0} body{background:#fff;font-size:12px} main{padding:0;max-width:none}
+  .panel,.kpi{box-shadow:none;break-inside:avoid} .cab-imp{display:block;margin:6px 0 12px;font-size:12px;color:#444}
+  .chart{height:220px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+var SB_URL='https://puepmnyffpfjttxmwfjt.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZXBtbnlmZnBmanR0eG13Zmp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NTMzMzksImV4cCI6MjEwNTIyOTMzOX0.6waSiEVZE0Fm2QraExivstM8qjzK7NGQ6698wmzHxjw';
+var sb=window.supabase.createClient(SB_URL,SB_KEY,{db:{schema:'iot'}});
+
+var S={perfis:[],perfil:null,locais:[],local:null,view:'geral',disp:[],grand:{},zonas:[],zd:[],faixas:[],tarifas:[],periodos:[],eventos:[],
+       diario:[],perEnergia:30,diaSel:null,perConforto:1,perCritico:7,perPortas:7,charts:{},timer:null,cache:{}};
+var VIEWS=[['geral','Visão geral'],['energia','Energia'],['conforto','Conforto'],['critico','Estoque crítico'],['portas','Portas'],['relatorios','Relatórios']];
+
+// ---------- utilitários ----------
+function el(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function toast(m,ms){var t=el('toast');t.textContent=m;t.hidden=false;clearTimeout(t._t);t._t=setTimeout(function(){t.hidden=true},ms||3200)}
+function fail(e){console.error(e);toast('Erro: '+(e&&e.message?e.message:e),5000)}
+function n(v,dec){if(v==null||isNaN(v))return '–';return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:dec==null?1:dec,maximumFractionDigits:dec==null?1:dec})}
+function reais(v){if(v==null||isNaN(v))return '–';return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function dataBR(s){var p=String(s).slice(0,10).split('-');return p[2]+'/'+p[1]}
+function dataHora(s){if(!s)return '–';var d=new Date(s);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+function isoDia(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function diasAtras(k){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-k);return d}
+function ago(s){if(!s)return 'sem dado';var m=Math.round((Date.now()-new Date(s).getTime())/60000);if(m<1)return 'agora';if(m<60)return 'há '+m+' min';var h=Math.floor(m/60);if(h<48)return 'há '+h+' h';return 'há '+Math.floor(h/24)+' d'}
+function duracao(min){if(min==null)return '–';if(min<60)return n(min,0)+' min';var h=Math.floor(min/60);return h+' h '+String(Math.round(min-h*60)).padStart(2,'0')+' min'}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function tipo(d){return d.tipos_dispositivo?d.tipos_dispositivo.codigo:''}
+function dispById(id){for(var i=0;i<S.disp.length;i++)if(S.disp[i].id===id)return S.disp[i];return null}
+function doLocal(){return S.disp.filter(function(d){return d.local_id===S.local.id&&d.ativo})}
+function medidor(){return doLocal().filter(function(d){return tipo(d)==='tuya:zndb'})[0]||null}
+function circuitos(){return doLocal().filter(function(d){return tipo(d)==='tuya:dlq'})}
+function portas(){return doLocal().filter(function(d){return tipo(d)==='tuya:mcs'})}
+function criticos(){return S.faixas.map(function(f){var d=dispById(f.dispositivo_id);return d&&d.local_id===S.local.id?{d:d,f:f}:null}).filter(Boolean)}
+function tarifaEm(dia){var t=S.tarifas.filter(function(x){return (!x.local_id||x.local_id===S.local.id)&&x.vigente_de<=dia}).sort(function(a,b){return a.vigente_de<b.vigente_de?1:-1})[0];return t?Number(t.valor_kwh):null}
+function grafico(id,cfg){if(S.charts[id]){S.charts[id].destroy();delete S.charts[id]}var c=el(id);if(!c)return;S.charts[id]=new Chart(c,cfg)}
+function eixos(extraY){var m=css('--muted'),l=css('--line');return {x:{ticks:{color:m,maxRotation:0,autoSkip:true,maxTicksLimit:12},grid:{display:false}},y:Object.assign({ticks:{color:m},grid:{color:l},beginAtZero:true},extraY||{})}}
+var CORES=['#0078B5','#DF412B','#1E8E5A','#B7791F','#6B4FA0','#0A1A2A'];
+
+// ---------- dados ----------
+async function q(p){var r=await p;if(r.error)throw r.error;return r.data}
+async function carregarBase(){
+  var cid=S.perfil.cliente_id;
+  var r=await Promise.all([
+    q(sb.from('locais').select('*').eq('cliente_id',cid).order('nome')),
+    q(sb.from('dispositivos').select('*, tipos_dispositivo(codigo,nome)').eq('cliente_id',cid).order('nome')),
+    q(sb.from('grandezas').select('dispositivo_id,codigo,nome,unidade,papel')),
+    q(sb.from('zonas').select('*').eq('cliente_id',cid).order('ordem')),
+    q(sb.from('zona_dispositivos').select('*')),
+    q(sb.from('faixas').select('*')),
+    q(sb.from('tarifas').select('*').eq('cliente_id',cid)),
+    q(sb.from('periodos').select('*').order('inicio')),
+    q(sb.from('eventos').select('*').eq('cliente_id',cid).neq('status','fechado').order('aberto_em',{ascending:false}).limit(50))
+  ]);
+  S.locais=r[0];S.disp=r[1];S.grand={};r[2].forEach(function(g){(S.grand[g.dispositivo_id]=S.grand[g.dispositivo_id]||[]).push(g)});
+  S.zonas=r[3];S.zd=r[4];S.faixas=r[5];S.tarifas=r[6];S.periodos=r[7];S.eventos=r[8];
+  if(!S.local||!S.locais.some(function(l){return l.id===S.local.id}))S.local=S.locais[0]||null;
+}
+async function carregarDiario(dias){
+  var m=medidor();S.diario=[];if(!m)return;
+  S.diario=await q(sb.from('v_consumo_diario').select('dia,kwh,kw_max,horas').eq('dispositivo_id',m.id).gte('dia',isoDia(diasAtras(dias))).order('dia'));
+}
+async function leituras(dispId,codigo,desde,limite){
+  return q(sb.from('leituras').select('valor,valor_texto,instante').eq('dispositivo_id',dispId).eq('codigo',codigo).gte('instante',desde.toISOString()).order('instante').limit(limite||5000));
+}
+
+// ---------- estrutura ----------
+function render(){
+  if(!S.perfil){renderLogin();return}
+  var h='<div class="top"><div class="topin"><div class="marca"><img src="logo-insiel.svg" alt="Insiel"><div><div class="t">Insiel Monitor</div><div class="s">Energia, conforto e estoque crítico</div></div></div><div class="sp"></div>'+
+    '<div class="cli"><div class="n">'+esc(S.perfil.cliente)+'</div>';
+  if(S.perfis.length>1)h+='<select onchange="A.cliente(this.value)" title="Cliente">'+S.perfis.map(function(p){return '<option value="'+p.cliente_id+'"'+(p.cliente_id===S.perfil.cliente_id?' selected':'')+'>'+esc(p.cliente)+'</option>'}).join('')+'</select> ';
+  if(S.locais.length>1)h+='<select onchange="A.local(this.value)" title="Unidade">'+S.locais.map(function(l){return '<option value="'+l.id+'"'+(S.local&&l.id===S.local.id?' selected':'')+'>'+esc(l.nome)+'</option>'}).join('')+'</select>';
+  else h+='<div class="l">'+esc(S.local?S.local.nome:'')+'</div>';
+  h+='</div><button class="btn sec sm" onclick="A.sair()">Sair</button></div></div>'+
+    '<nav><div class="in">'+VIEWS.map(function(v){return '<button class="'+(S.view===v[0]?'on':'')+'" onclick="A.ir(\''+v[0]+'\')">'+v[1]+'</button>'}).join('')+'</div></nav>'+
+    '<main><div class="cab-imp">'+esc(S.perfil.cliente)+' · '+esc(S.local?S.local.nome:'')+' · emitido em '+new Date().toLocaleString('pt-BR')+'</div><div id="main"><div class="empty">Carregando…</div></div>'+
+    '<div class="rodape">Insiel Tecnologia Eletrônica · dados atualizados automaticamente · horários no fuso do seu navegador</div></main>';
+  el('app').innerHTML=h;
+  if(!S.local){el('main').innerHTML='<div class="panel empty">Nenhuma unidade cadastrada para este cliente.</div>';return}
+  ({geral:vGeral,energia:vEnergia,conforto:vConforto,critico:vCritico,portas:vPortas,relatorios:vRelatorios})[S.view]().catch(fail);
+}
+function renderLogin(){
+  el('app').innerHTML='<div class="login"><img src="logo-insiel.svg" alt="Insiel"><h1>Insiel Monitor</h1><p class="s">Portal do cliente</p>'+
+  '<div id="f-in"><div class="fld"><label>E-mail</label><input id="li-email" type="email" autocomplete="username"></div>'+
+  '<div class="fld"><label>Senha</label><input id="li-senha" type="password" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')A.entrar()"></div>'+
+  '<button class="btn" style="width:100%" onclick="A.entrar()">Entrar</button><button class="lk" onclick="A.troca(false)">Primeiro acesso? Criar senha</button></div>'+
+  '<div id="f-up" hidden><p class="small muted">Use o e-mail que a Insiel cadastrou para você.</p><div class="fld"><label>E-mail</label><input id="su-email" type="email"></div>'+
+  '<div class="fld"><label>Senha (mínimo 8 caracteres)</label><input id="su-senha" type="password"></div><div class="fld"><label>Repita a senha</label><input id="su-senha2" type="password"></div>'+
+  '<button class="btn" style="width:100%" onclick="A.criar()">Criar acesso</button><button class="lk" onclick="A.troca(true)">Já tenho senha</button></div></div>';
+}
+
+// ---------- Visão geral ----------
+async function vGeral(){
+  await carregarDiario(35);
+  var m=medidor(),hoje=isoDia(new Date()),mes=hoje.slice(0,7);
+  var dHoje=S.diario.filter(function(x){return x.dia===hoje})[0];
+  var kMes=0,cMes=0;S.diario.forEach(function(x){if(x.dia.slice(0,7)===mes){kMes+=Number(x.kwh);var t=tarifaEm(x.dia);if(t)cMes+=Number(x.kwh)*t}});
+  var tHoje=tarifaEm(hoje),pot=m&&m.estado_atual?m.estado_atual.potencia_total:null;
+  var eco=economia();
+  var h='<div class="kpis">'+
+    '<div class="kpi"><div class="l">Consumo hoje</div><div class="v">'+n(dHoje?dHoje.kwh:0)+'<small>kWh</small></div><div class="d">'+(tHoje?reais((dHoje?dHoje.kwh:0)*tHoje):'tarifa não cadastrada')+' · até a última hora fechada</div></div>'+
+    '<div class="kpi"><div class="l">Consumo no mês</div><div class="v">'+n(kMes,0)+'<small>kWh</small></div><div class="d">'+reais(cMes)+' estimados</div></div>'+
+    '<div class="kpi"><div class="l">Potência agora</div><div class="v">'+(pot!=null?n(pot/1000,2):'–')+'<small>kW</small></div><div class="d">'+(m?'medidor geral · '+ago(m.ultima_leitura_em):'medidor geral não instalado')+'</div></div>'+
+    '<div class="kpi '+eco.cls+'"><div class="l">Economia sobre a linha de base</div><div class="v">'+eco.valor+'</div><div class="d">'+eco.nota+'</div></div></div>';
+  h+='<div class="grid2"><div class="panel"><div class="row between"><h2 style="margin:0">Consumo diário (kWh)</h2><span class="small muted">últimos 30 dias</span></div><div class="chart" style="margin-top:10px"><canvas id="g-dia"></canvas></div><div id="g-dia-vazio"></div></div>'+
+    '<div class="panel"><h2>Atenção</h2>'+avisos()+'</div></div>';
+  h+='<div class="panel" style="margin-top:14px"><h2>Temperatura por zona</h2><div class="zonas">'+zonasHtml()+'</div></div>';
+  var cr=criticos();
+  if(cr.length)h+='<div class="panel"><div class="row between"><h2 style="margin:0">Estoque crítico</h2><button class="btn sec sm" onclick="A.ir(\'critico\')">Ver detalhes</button></div><div class="zonas" style="margin-top:10px">'+cr.map(function(x){
+    var v=x.d.estado_atual?x.d.estado_atual[x.f.codigo]:null,fora=v!=null&&((x.f.maximo!=null&&v>x.f.maximo)||(x.f.minimo!=null&&v<x.f.minimo));
+    return '<div class="zona"><div class="n">'+esc(nomeLimpo(x.d.nome))+'</div><div class="v">'+n(v)+' <span class="u">°C</span></div><div>'+(v==null?'<span class="chip muted">sem dado</span>':fora?'<span class="chip crit">fora da faixa</span>':'<span class="chip ok">na faixa</span>')+' <span class="u">'+n(x.f.minimo,0)+' a '+n(x.f.maximo,0)+' °C</span></div><div class="u">'+ago(x.d.ultima_leitura_em)+'</div></div>'}).join('')+'</div></div>';
+  el('main').innerHTML=h;
+  graficoDiario('g-dia',S.diario.slice(-30),false);
+}
+function nomeLimpo(s){return String(s).replace(/^RDP\s+/,'')}
+function zonasHtml(){
+  var zs=S.zonas.filter(function(z){return z.local_id===S.local.id});
+  if(!zs.length)return '<div class="muted small">Nenhuma zona cadastrada.</div>';
+  return zs.map(function(z){var d=z.sensor_dispositivo_id?dispById(z.sensor_dispositivo_id):null,e=d&&d.estado_atual||{};
+    return '<div class="zona"><div class="n">'+esc(z.nome)+'</div><div class="v">'+n(e.va_temperature)+' <span class="u">°C</span></div><div class="u">umidade '+n(e.va_humidity,0)+'% · '+(d?ago(d.ultima_leitura_em):'sem sensor')+'</div></div>'}).join('');
+}
+function avisos(){
+  var a=[],dl=doLocal();
+  S.eventos.forEach(function(e){var d=e.dispositivo_id?dispById(e.dispositivo_id):null;if(d&&d.local_id!==S.local.id)return;
+    a.push('<div class="aviso'+(e.severidade==='critico'?' crit':'')+'"><div class="t">'+esc(nomeLimpo(e.titulo))+'</div><div class="d">desde '+dataHora(e.aberto_em)+'</div></div>')});
+  var off=dl.filter(function(d){return d.online===false});
+  if(off.length&&!a.length)a.push('<div class="aviso"><div class="t">'+off.length+' aparelho(s) sem comunicação</div><div class="d">'+off.map(function(d){return esc(nomeLimpo(d.nome))}).join(', ')+'</div></div>');
+  if(!a.length)return '<div class="aviso ok"><div class="t">Tudo em ordem</div><div class="d">Nenhum alerta aberto nesta unidade.</div></div>';
+  return a.slice(0,6).join('')+(a.length>6?'<div class="small muted">e mais '+(a.length-6)+'…</div>':'');
+}
+function economia(){
+  var ps=S.periodos.filter(function(p){return p.local_id===S.local.id});
+  var base=ps.filter(function(p){return p.tipo==='linha_base'})[0],auto=ps.filter(function(p){return p.tipo==='automacao'})[0];
+  if(!base)return {valor:'–',cls:'',nota:'Linha de base ainda não iniciada'};
+  var hoje=isoDia(new Date());
+  function media(p){var ds=S.diario.filter(function(x){return x.dia>=p.inicio&&x.dia<=(p.fim||hoje)&&x.dia<hoje&&x.horas>=20});if(!ds.length)return null;return ds.reduce(function(s,x){return s+Number(x.kwh)},0)/ds.length}
+  var mb=media(base);
+  if(!auto||auto.inicio>hoje){var dias=Math.max(0,Math.round((new Date(hoje)-new Date(base.inicio))/864e5)+1);return {valor:'–',cls:'',nota:'Linha de base em medição · dia '+dias+(mb?' · média '+n(mb,0)+' kWh/dia':'')}}
+  var ma=media(auto);if(mb==null||ma==null)return {valor:'–',cls:'',nota:'Aguardando dias completos de medição'};
+  var e=(1-ma/mb)*100;
+  return {valor:n(e,1)+'<small>%</small>',cls:e>=0?'ok':'warn',nota:n(mb,0)+' → '+n(ma,0)+' kWh/dia (média diária simples)'};
+}
+function graficoDiario(id,dados,clicavel){
+  var vz=el(id+'-vazio');
+  if(!dados.length){if(vz)vz.innerHTML='<div class="empty">Ainda não há consumo registrado. Os dados aparecem a partir da instalação do medidor geral.</div>';el(id).parentNode.style.display='none';return}
+  grafico(id,{type:'bar',data:{labels:dados.map(function(x){return dataBR(x.dia)}),datasets:[{data:dados.map(function(x){return Number(x.kwh)}),backgroundColor:dados.map(function(x){return x.dia===S.diaSel&&clicavel?css('--accent'):css('--brand')}),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){var x=dados[c.dataIndex],t=tarifaEm(x.dia);return n(c.parsed.y)+' kWh'+(t?' · '+reais(c.parsed.y*t):'')}}}},scales:eixos(),
+      onClick:clicavel?function(ev,els){if(els.length){S.diaSel=dados[els[0].index].dia;vEnergia().catch(fail)}}:undefined}});
+}
+
+// ---------- Energia ----------
+async function vEnergia(){
+  await carregarDiario(S.perEnergia);
+  var m=medidor(),ds=S.diario,hoje=isoDia(new Date());
+  if(!S.diaSel||!ds.some(function(x){return x.dia===S.diaSel}))S.diaSel=ds.length?ds[ds.length-1].dia:null;
+  var tot=0,custo=0,pico=null;ds.forEach(function(x){tot+=Number(x.kwh);var t=tarifaEm(x.dia);if(t)custo+=Number(x.kwh)*t;if(x.kw_max!=null&&(!pico||Number(x.kw_max)>Number(pico.kw_max)))pico=x});
+  var completos=ds.filter(function(x){return x.dia<hoje});
+  var h='<div class="row between" style="margin-bottom:12px"><h1>Energia</h1>'+seg('perEnergia',[[7,'7 dias'],[30,'30 dias'],[90,'90 dias']],'energia')+'</div>'+
+    '<div class="kpis"><div class="kpi"><div class="l">Consumo no período</div><div class="v">'+n(tot,0)+'<small>kWh</small></div><div class="d">'+ds.length+' dia(s) com medição</div></div>'+
+    '<div class="kpi"><div class="l">Custo estimado</div><div class="v">'+reais(custo)+'</div><div class="d">'+(tarifaEm(hoje)?'tarifa de '+reais(tarifaEm(hoje))+'/kWh':'tarifa não cadastrada')+'</div></div>'+
+    '<div class="kpi"><div class="l">Média por dia</div><div class="v">'+(completos.length?n(completos.reduce(function(s,x){return s+Number(x.kwh)},0)/completos.length,0):'–')+'<small>kWh</small></div><div class="d">dias completos</div></div>'+
+    '<div class="kpi"><div class="l">Maior demanda</div><div class="v">'+(pico?n(pico.kw_max,1):'–')+'<small>kW</small></div><div class="d">'+(pico?'em '+dataBR(pico.dia):'sem registro')+'</div></div></div>';
+  h+='<div class="panel"><div class="row between"><h2 style="margin:0">Consumo por dia (kWh)</h2><span class="small muted noprint">clique num dia para ver as horas</span></div><div class="chart" style="margin-top:10px"><canvas id="g-en"></canvas></div><div id="g-en-vazio"></div></div>';
+  h+='<div class="grid2"><div class="panel"><h2>Consumo por hora'+(S.diaSel?' em '+dataBR(S.diaSel):'')+'</h2><div class="chart sm"><canvas id="g-hora"></canvas></div><div id="g-hora-vazio"></div></div>'+
+    '<div class="panel"><h2>Iluminação por circuito</h2><div id="circ"><div class="empty">Carregando…</div></div></div></div>';
+  el('main').innerHTML=h;
+  graficoDiario('g-en',ds,true);
+  if(!m)return;
+  if(S.diaSel){
+    var ini=new Date(S.diaSel+'T00:00:00'),fim=new Date(ini.getTime()+864e5);
+    var hs=await q(sb.from('consumo_horario').select('hora,kwh').eq('dispositivo_id',m.id).gte('hora',ini.toISOString()).lt('hora',fim.toISOString()).order('hora'));
+    var v=new Array(24).fill(0);hs.forEach(function(x){v[new Date(x.hora).getHours()]=Number(x.kwh)});
+    if(hs.length)grafico('g-hora',{type:'bar',data:{labels:v.map(function(_,i){return i+'h'}),datasets:[{data:v,backgroundColor:css('--brand'),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return n(c.parsed.y,2)+' kWh'}}}},scales:eixos()}});
+    else{el('g-hora').parentNode.style.display='none';el('g-hora-vazio').innerHTML='<div class="empty">Sem dados neste dia.</div>'}
+  }
+  var cs=circuitos(),box=el('circ');
+  if(!cs.length){box.innerHTML='<div class="muted small">Nenhum circuito medido.</div>';return}
+  var rs=await q(sb.from('v_consumo_diario').select('dispositivo_id,kwh,kw_max').in('dispositivo_id',cs.map(function(c){return c.id})).gte('dia',isoDia(diasAtras(S.perEnergia))));
+  var linhas=cs.map(function(c){var k=0,mx=null;rs.forEach(function(r){if(r.dispositivo_id===c.id){k+=Number(r.kwh);if(r.kw_max!=null&&(mx==null||Number(r.kw_max)>mx))mx=Number(r.kw_max)}});return {nome:nomeLimpo(c.nome),kwh:k,max:mx,ligado:c.estado_atual&&c.estado_atual.switch}});
+  var somaC=linhas.reduce(function(s,x){return s+x.kwh},0);
+  if(!box)return;
+  box.innerHTML='<div class="tblwrap"><table><tr><th>Circuito</th><th class="n">kWh</th><th class="n">% da loja</th><th>Agora</th></tr>'+linhas.map(function(x){return '<tr><td>'+esc(x.nome)+'</td><td class="n">'+n(x.kwh,1)+'</td><td class="n">'+(tot>0?n(x.kwh/tot*100,1)+'%':'–')+'</td><td>'+(x.ligado===true?'<span class="chip ok">ligado</span>':x.ligado===false?'<span class="chip muted">desligado</span>':'–')+'</td></tr>'}).join('')+
+    '<tr><td><b>Iluminação medida</b></td><td class="n"><b>'+n(somaC,1)+'</b></td><td class="n"><b>'+(tot>0?n(somaC/tot*100,1)+'%':'–')+'</b></td><td></td></tr>'+
+    '<tr><td>Demais cargas (climatização, refrigeração e outras)</td><td class="n">'+n(Math.max(0,tot-somaC),1)+'</td><td class="n">'+(tot>0?n(Math.max(0,tot-somaC)/tot*100,1)+'%':'–')+'</td><td></td></tr></table></div>';
+}
+function seg(chave,ops,view){return '<div class="seg">'+ops.map(function(o){return '<button class="'+(S[chave]===o[0]?'on':'')+'" onclick="A.per(\''+chave+'\','+o[0]+',\''+view+'\')">'+o[1]+'</button>'}).join('')+'</div>'}
+
+// ---------- Conforto ----------
+async function vConforto(){
+  var zs=S.zonas.filter(function(z){return z.local_id===S.local.id&&z.sensor_dispositivo_id});
+  var h='<div class="row between" style="margin-bottom:12px"><h1>Conforto</h1>'+seg('perConforto',[[1,'24 horas'],[7,'7 dias'],[30,'30 dias']],'conforto')+'</div>'+
+    '<div class="panel"><h2>Temperatura por zona (°C)</h2><div class="chart"><canvas id="g-conf"></canvas></div><div id="g-conf-vazio"></div></div>'+
+    '<div class="panel"><h2>Resumo do período</h2><div id="t-conf"><div class="empty">Carregando…</div></div></div>';
+  el('main').innerHTML=h;
+  if(!zs.length){el('t-conf').innerHTML='<div class="muted small">Nenhuma zona com sensor.</div>';return}
+  var desde=new Date(Date.now()-S.perConforto*864e5),series=[],linhas=[];
+  for(var i=0;i<zs.length;i++){
+    var z=zs[i],d=dispById(z.sensor_dispositivo_id),pts;
+    if(S.perConforto<=7){var ls=await leituras(d.id,'va_temperature',desde);pts=ls.filter(function(x){return x.valor!=null}).map(function(x){return {x:new Date(x.instante).getTime(),y:Number(x.valor)}})}
+    else{var rs=await q(sb.rpc('resumo_diario',{p_dispositivo_id:d.id,p_codigo:'va_temperature',p_inicio:isoDia(diasAtras(S.perConforto)),p_fim:isoDia(new Date())}));pts=rs.map(function(x){return {x:new Date(x.dia+'T12:00:00').getTime(),y:Number(x.media),mn:Number(x.minimo),mx:Number(x.maximo)}})}
+    series.push({label:z.nome,data:pts,borderColor:CORES[i%CORES.length],backgroundColor:CORES[i%CORES.length],borderWidth:2,pointRadius:pts.length>80?0:2,tension:.25});
+    var vs=pts.map(function(p){return p.y}),mn=pts.length?Math.min.apply(null,pts.map(function(p){return p.mn!=null?p.mn:p.y})):null,mx=pts.length?Math.max.apply(null,pts.map(function(p){return p.mx!=null?p.mx:p.y})):null;
+    linhas.push({z:z.nome,atual:d.estado_atual?d.estado_atual.va_temperature:null,um:d.estado_atual?d.estado_atual.va_humidity:null,mn:mn,mx:mx,md:vs.length?vs.reduce(function(a,b){return a+b},0)/vs.length:null,quando:d.ultima_leitura_em});
+  }
+  if(!el('g-conf'))return;
+  if(series.some(function(s){return s.data.length})){
+    var fmt=S.perConforto<=1?function(v){return new Date(v).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}:function(v){return new Date(v).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})};
+    grafico('g-conf',{type:'line',data:{datasets:series},options:{responsive:true,maintainAspectRatio:false,animation:false,parsing:false,plugins:{legend:{labels:{color:css('--text'),boxWidth:12}},tooltip:{callbacks:{title:function(c){return dataHora(c[0].parsed.x)},label:function(c){return c.dataset.label+': '+n(c.parsed.y)+' °C'}}}},
+      scales:{x:{type:'linear',ticks:{color:css('--muted'),maxTicksLimit:8,callback:fmt},grid:{display:false}},y:{ticks:{color:css('--muted')},grid:{color:css('--line')}}}}});
+  }else{el('g-conf').parentNode.style.display='none';el('g-conf-vazio').innerHTML='<div class="empty">Sem leituras no período.</div>'}
+  el('t-conf').innerHTML='<div class="tblwrap"><table><tr><th>Zona</th><th class="n">Agora</th><th class="n">Mínima</th><th class="n">Média</th><th class="n">Máxima</th><th class="n">Umidade agora</th><th>Última leitura</th></tr>'+linhas.map(function(x){return '<tr><td>'+esc(x.z)+'</td><td class="n"><b>'+n(x.atual)+' °C</b></td><td class="n">'+n(x.mn)+'</td><td class="n">'+n(x.md)+'</td><td class="n">'+n(x.mx)+'</td><td class="n">'+n(x.um,0)+'%</td><td>'+ago(x.quando)+'</td></tr>'}).join('')+'</table></div>';
+}
+
+// ---------- Estoque crítico ----------
+async function vCritico(){
+  var cr=criticos();
+  var h='<div class="row between" style="margin-bottom:12px"><div><h1>Estoque crítico</h1><div class="small muted">Temperatura de geladeiras e câmaras com faixa controlada</div></div>'+seg('perCritico',[[1,'24 horas'],[7,'7 dias'],[30,'30 dias']],'critico')+'</div>';
+  if(!cr.length){el('main').innerHTML=h+'<div class="panel empty">Nenhum ponto de estoque crítico cadastrado nesta unidade.</div>';return}
+  h+=cr.map(function(x,i){return '<div class="panel"><div class="row between"><h2 style="margin:0">'+esc(nomeLimpo(x.d.nome))+'</h2><span class="small muted">faixa de '+n(x.f.minimo,0)+' a '+n(x.f.maximo,0)+' °C'+(x.f.descricao?' · '+esc(x.f.descricao):'')+'</span></div>'+
+    '<div class="kpis" id="ck-'+i+'" style="margin:12px 0 4px"></div><div class="chart sm"><canvas id="cg-'+i+'"></canvas></div><div id="cg-'+i+'-vazio"></div>'+
+    '<div class="grid2" style="margin-top:14px"><div><h3 style="margin-bottom:6px">Saídas da faixa</h3><div id="ce-'+i+'"></div></div><div><h3 style="margin-bottom:6px">Registro diário</h3><div id="cd-'+i+'"></div></div></div></div>'}).join('');
+  h+='<p class="small muted">Monitoramento contínuo de apoio. O sensor não substitui o termômetro e o registro oficiais exigidos pela vigilância sanitária.</p>';
+  el('main').innerHTML=h;
+  var desde=new Date(Date.now()-S.perCritico*864e5),agora=new Date();
+  for(var i=0;i<cr.length;i++){
+    var x=cr[i];
+    var r=await Promise.all([leituras(x.d.id,x.f.codigo,desde),
+      q(sb.rpc('excursoes',{p_dispositivo_id:x.d.id,p_codigo:x.f.codigo,p_inicio:desde.toISOString(),p_fim:agora.toISOString()})),
+      q(sb.rpc('resumo_diario',{p_dispositivo_id:x.d.id,p_codigo:x.f.codigo,p_inicio:isoDia(desde),p_fim:isoDia(agora)}))]);
+    if(!el('ck-'+i))return;
+    var pts=r[0].filter(function(p){return p.valor!=null}).map(function(p){return {x:new Date(p.instante).getTime(),y:Number(p.valor)}}),ex=r[1],dias=r[2];
+    var totalMin=pts.length?(agora.getTime()-pts[0].x)/60000:0,foraMin=ex.reduce(function(s,e){return s+Number(e.minutos)},0);
+    var pct=totalMin>0?Math.max(0,100-foraMin/totalMin*100):null,maior=ex.reduce(function(m,e){return Math.max(m,Number(e.minutos))},0);
+    var atual=x.d.estado_atual?x.d.estado_atual[x.f.codigo]:null,fora=atual!=null&&((x.f.maximo!=null&&atual>x.f.maximo)||(x.f.minimo!=null&&atual<x.f.minimo));
+    el('ck-'+i).innerHTML='<div class="kpi '+(atual==null?'':fora?'crit':'ok')+'"><div class="l">Agora</div><div class="v">'+n(atual)+'<small>°C</small></div><div class="d">'+ago(x.d.ultima_leitura_em)+'</div></div>'+
+      '<div class="kpi '+(pct==null?'':pct>=99?'ok':pct>=95?'warn':'crit')+'"><div class="l">Tempo dentro da faixa</div><div class="v">'+(pct==null?'–':n(pct,1)+'<small>%</small>')+'</div><div class="d">no período selecionado</div></div>'+
+      '<div class="kpi"><div class="l">Saídas da faixa</div><div class="v">'+ex.length+'</div><div class="d">maior duração: '+(ex.length?duracao(maior):'–')+'</div></div>'+
+      '<div class="kpi"><div class="l">Mínima / máxima</div><div class="v" style="font-size:20px">'+(pts.length?n(Math.min.apply(null,pts.map(function(p){return p.y})))+' / '+n(Math.max.apply(null,pts.map(function(p){return p.y}))):'–')+'<small>°C</small></div><div class="d">no período</div></div>';
+    if(pts.length){
+      var x0=pts[0].x,x1=agora.getTime(),fmt=S.perCritico<=1?function(v){return new Date(v).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}:function(v){return new Date(v).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})};
+      var dsets=[{label:'Temperatura',data:pts.concat([{x:x1,y:pts[pts.length-1].y}]),borderColor:css('--brand'),borderWidth:2,pointRadius:pts.length>80?0:2,stepped:true}];
+      if(x.f.maximo!=null)dsets.push({label:'Máximo',data:[{x:x0,y:Number(x.f.maximo)},{x:x1,y:Number(x.f.maximo)}],borderColor:css('--crit'),borderWidth:1.2,borderDash:[5,4],pointRadius:0});
+      if(x.f.minimo!=null)dsets.push({label:'Mínimo',data:[{x:x0,y:Number(x.f.minimo)},{x:x1,y:Number(x.f.minimo)}],borderColor:css('--crit'),borderWidth:1.2,borderDash:[5,4],pointRadius:0});
+      grafico('cg-'+i,{type:'line',data:{datasets:dsets},options:{responsive:true,maintainAspectRatio:false,animation:false,parsing:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(c){return dataHora(c[0].parsed.x)},label:function(c){return c.dataset.label+': '+n(c.parsed.y)+' °C'}}}},
+        scales:{x:{type:'linear',min:x0,max:x1,ticks:{color:css('--muted'),maxTicksLimit:8,callback:fmt},grid:{display:false}},y:{ticks:{color:css('--muted')},grid:{color:css('--line')}}}}});
+    }else{el('cg-'+i).parentNode.style.display='none';el('cg-'+i+'-vazio').innerHTML='<div class="empty">Sem leituras no período.</div>'}
+    el('ce-'+i).innerHTML=ex.length?'<div class="tblwrap"><table><tr><th>Início</th><th>Fim</th><th class="n">Duração</th><th class="n">Pico</th></tr>'+ex.slice().reverse().slice(0,30).map(function(e){return '<tr><td>'+dataHora(e.inicio)+'</td><td>'+dataHora(e.fim)+'</td><td class="n">'+duracao(Number(e.minutos))+'</td><td class="n">'+n(e.pico)+' °C <span class="chip '+(e.sentido==='acima'?'crit':'warn')+'">'+e.sentido+'</span></td></tr>'}).join('')+'</table></div>':'<div class="aviso ok"><div class="t">Nenhuma saída da faixa no período</div></div>';
+    el('cd-'+i).innerHTML=dias.length?'<div class="tblwrap"><table><tr><th>Dia</th><th class="n">Mínima</th><th class="n">Máxima</th><th class="n">Média</th><th class="n">Leituras</th></tr>'+dias.slice().reverse().map(function(d){var ruim=(x.f.maximo!=null&&Number(d.maximo)>x.f.maximo)||(x.f.minimo!=null&&Number(d.minimo)<x.f.minimo);return '<tr><td>'+dataBR(d.dia)+'</td><td class="n">'+n(d.minimo)+'</td><td class="n">'+(ruim?'<b style="color:var(--crit)">'+n(d.maximo)+'</b>':n(d.maximo))+'</td><td class="n">'+n(d.media)+'</td><td class="n">'+d.leituras+'</td></tr>'}).join('')+'</table></div>':'<div class="muted small">Sem leituras.</div>';
+  }
+}
+
+// ---------- Portas ----------
+function aberturas(ls,fim){
+  var out=[],ini=null;
+  ls.forEach(function(l){var a=Number(l.valor)===1,t=new Date(l.instante).getTime();if(a&&ini==null)ini=t;else if(!a&&ini!=null){out.push({ini:ini,fim:t,min:(t-ini)/60000,aberta:false});ini=null}});
+  if(ini!=null)out.push({ini:ini,fim:fim,min:(fim-ini)/60000,aberta:true});
+  return out;
+}
+async function vPortas(){
+  var ps=portas();
+  var h='<div class="row between" style="margin-bottom:12px"><h1>Portas</h1>'+seg('perPortas',[[1,'24 horas'],[7,'7 dias'],[30,'30 dias']],'portas')+'</div>';
+  if(!ps.length){el('main').innerHTML=h+'<div class="panel empty">Nenhum sensor de porta nesta unidade.</div>';return}
+  h+='<div class="kpis" id="pk"></div><div class="panel"><h2>Aberturas por dia</h2><div class="chart sm"><canvas id="g-porta"></canvas></div><div id="g-porta-vazio"></div></div>'+
+    '<div class="panel"><h2>Aberturas com mais de 2 minutos</h2><div id="p-longas"><div class="empty">Carregando…</div></div></div>';
+  el('main').innerHTML=h;
+  var desde=new Date(Date.now()-S.perPortas*864e5),agora=Date.now(),kp='',longas=[],porDia={},series=[];
+  for(var i=0;i<ps.length;i++){
+    var p=ps[i],ab=aberturas(await leituras(p.id,'doorcontact_state',desde),agora),tot=ab.reduce(function(s,a){return s+a.min},0),mais2=ab.filter(function(a){return a.min>2});
+    var aberta=p.estado_atual&&p.estado_atual.doorcontact_state===true;
+    kp+='<div class="kpi '+(aberta?'warn':'')+'"><div class="l">'+esc(nomeLimpo(p.nome))+'</div><div class="v" style="font-size:20px">'+(aberta?'Aberta':'Fechada')+'</div><div class="d">'+ab.length+' abertura(s) · '+duracao(tot)+' aberta · '+mais2.length+' acima de 2 min</div></div>';
+    var dias={};ab.forEach(function(a){var k=isoDia(new Date(a.ini));dias[k]=(dias[k]||0)+1;porDia[k]=true});
+    series.push({label:nomeLimpo(p.nome),dias:dias,cor:CORES[i%CORES.length]});
+    mais2.forEach(function(a){longas.push({porta:nomeLimpo(p.nome),ini:a.ini,min:a.min,aberta:a.aberta})});
+  }
+  if(!el('pk'))return;
+  el('pk').innerHTML=kp;
+  var chaves=Object.keys(porDia).sort();
+  if(chaves.length)grafico('g-porta',{type:'bar',data:{labels:chaves.map(dataBR),datasets:series.map(function(s){return {label:s.label,data:chaves.map(function(k){return s.dias[k]||0}),backgroundColor:s.cor,borderRadius:3}})},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:css('--text'),boxWidth:12}}},scales:eixos({ticks:{color:css('--muted'),precision:0}})}});
+  else{el('g-porta').parentNode.style.display='none';el('g-porta-vazio').innerHTML='<div class="empty">Nenhuma abertura registrada no período.</div>'}
+  longas.sort(function(a,b){return b.ini-a.ini});
+  el('p-longas').innerHTML=longas.length?'<div class="tblwrap"><table><tr><th>Porta</th><th>Aberta em</th><th class="n">Duração</th></tr>'+longas.slice(0,60).map(function(a){return '<tr><td>'+esc(a.porta)+'</td><td>'+dataHora(a.ini)+'</td><td class="n">'+duracao(a.min)+(a.aberta?' <span class="chip warn">ainda aberta</span>':'')+'</td></tr>'}).join('')+'</table></div>':'<div class="aviso ok"><div class="t">Nenhuma abertura acima de 2 minutos no período</div></div>';
+}
+
+// ---------- Relatórios ----------
+async function vRelatorios(){
+  var dl=doLocal(),hoje=isoDia(new Date()),ini=isoDia(diasAtras(30));
+  var ops=dl.map(function(d){return (S.grand[d.id]||[]).filter(function(g){return g.papel==='leitura'}).map(function(g){return '<option value="'+d.id+'|'+g.codigo+'">'+esc(nomeLimpo(d.nome))+' · '+esc(g.nome)+'</option>'}).join('')}).join('');
+  el('main').innerHTML='<h1 style="margin-bottom:12px">Relatórios</h1>'+
+    '<div class="panel"><h2>Relatórios para imprimir ou salvar em PDF</h2><p class="small muted" style="margin-top:-4px">Abra a visão desejada, escolha o período e use o botão abaixo. Na janela de impressão, selecione "Salvar como PDF".</p>'+
+    '<div class="row"><button class="btn sec" onclick="A.imprimir(\'energia\')">Energia</button><button class="btn sec" onclick="A.imprimir(\'critico\')">Estoque crítico</button><button class="btn sec" onclick="A.imprimir(\'conforto\')">Conforto</button><button class="btn sec" onclick="A.imprimir(\'portas\')">Portas</button></div></div>'+
+    '<div class="panel"><h2>Exportar dados para planilha</h2><div class="row" style="align-items:flex-end">'+
+    '<div class="fld"><label>De</label><input id="x-de" type="date" value="'+ini+'"></div><div class="fld"><label>Até</label><input id="x-ate" type="date" value="'+hoje+'"></div>'+
+    '<button class="btn" onclick="A.exportarConsumo()">Consumo por hora</button></div>'+
+    '<div class="row" style="align-items:flex-end;margin-top:12px"><div class="fld" style="min-width:280px"><label>Leituras de um sensor</label><select id="x-serie">'+ops+'</select></div><button class="btn" onclick="A.exportarLeituras()">Leituras do sensor</button></div>'+
+    '<p class="small muted" style="margin-bottom:0">Arquivo CSV com ponto e vírgula, pronto para abrir no Excel.</p></div>'+
+    '<div class="panel"><h2>Relatório mensal de eficiência</h2><p class="small muted" style="margin:0">Consumo comparado com a linha de base, economia em kWh e em reais. Disponível depois que a linha de base de 30 dias estiver concluída.</p></div>';
+}
+function baixar(nome,linhas){
+  var csv='﻿'+linhas.map(function(l){return l.map(function(c){c=c==null?'':String(c);return /[;"\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(';')}).join('\r\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=nome;document.body.appendChild(a);a.click();a.remove();
+}
+function dec(v){return v==null?'':String(v).replace('.',',')}
+
+// ---------- ações ----------
+window.A={
+  troca:function(entrar){el('f-in').hidden=!entrar;el('f-up').hidden=entrar},
+  entrar:async function(){try{var r=await sb.auth.signInWithPassword({email:el('li-email').value.trim(),password:el('li-senha').value});
+    if(r.error){var m=r.error.message||'';if(m.indexOf('Invalid login')>-1)throw new Error('E-mail ou senha incorretos.');if(m.indexOf('not confirmed')>-1)throw new Error('Confirme seu e-mail antes de entrar.');throw r.error}}catch(e){fail(e)}},
+  criar:async function(){try{var em=el('su-email').value.trim(),p1=el('su-senha').value,p2=el('su-senha2').value;
+    if(!em)throw new Error('Informe o e-mail.');if(p1.length<8)throw new Error('A senha precisa de pelo menos 8 caracteres.');if(p1!==p2)throw new Error('As senhas não conferem.');
+    var r=await sb.auth.signUp({email:em,password:p1,options:{emailRedirectTo:window.location.href.split('#')[0]}});if(r.error)throw r.error;
+    if(r.data&&r.data.user&&r.data.user.identities&&r.data.user.identities.length===0)throw new Error('Este e-mail já tem senha. Use "Já tenho senha".');
+    if(!r.data.session)toast('Acesso criado. Confira seu e-mail (inclusive o spam) para confirmar.',6000)}catch(e){fail(e)}},
+  sair:async function(){await sb.auth.signOut()},
+  ir:function(v){S.view=v;render()},
+  per:function(chave,valor,view){S[chave]=valor;if(chave==='perEnergia')S.diaSel=null;S.view=view;render()},
+  cliente:async function(cid){S.perfil=S.perfis.filter(function(p){return p.cliente_id===cid})[0];S.local=null;try{await carregarBase();render()}catch(e){fail(e)}},
+  local:function(id){S.local=S.locais.filter(function(l){return l.id===id})[0];S.diaSel=null;render()},
+  imprimir:function(v){S.view=v;render();setTimeout(function(){window.print()},1800)},
+  exportarConsumo:async function(){try{
+    var de=el('x-de').value,ate=el('x-ate').value,ids=doLocal().filter(function(d){return tipo(d)==='tuya:zndb'||tipo(d)==='tuya:dlq'});
+    if(!ids.length)throw new Error('Nenhum medidor nesta unidade.');
+    var rs=await q(sb.from('consumo_horario').select('dispositivo_id,hora,kwh,kw_max').in('dispositivo_id',ids.map(function(d){return d.id})).gte('hora',new Date(de+'T00:00:00').toISOString()).lt('hora',new Date(new Date(ate+'T00:00:00').getTime()+864e5).toISOString()).order('hora').limit(20000));
+    if(!rs.length)throw new Error('Sem consumo registrado no período.');
+    baixar('consumo_por_hora_'+de+'_a_'+ate+'.csv',[['Medidor','Data','Hora','kWh','Demanda máxima (kW)']].concat(rs.map(function(r){var d=new Date(r.hora);return [nomeLimpo(dispById(r.dispositivo_id).nome),d.toLocaleDateString('pt-BR'),String(d.getHours()).padStart(2,'0')+':00',dec(r.kwh),dec(r.kw_max)]})));
+  }catch(e){fail(e)}},
+  exportarLeituras:async function(){try{
+    var s=el('x-serie').value.split('|'),de=el('x-de').value,ate=el('x-ate').value;if(!s[0])throw new Error('Escolha o sensor.');
+    var rs=await q(sb.from('leituras').select('valor,valor_texto,instante').eq('dispositivo_id',s[0]).eq('codigo',s[1]).gte('instante',new Date(de+'T00:00:00').toISOString()).lt('instante',new Date(new Date(ate+'T00:00:00').getTime()+864e5).toISOString()).order('instante').limit(20000));
+    if(!rs.length)throw new Error('Sem leituras no período.');
+    var d=dispById(s[0]),g=(S.grand[s[0]]||[]).filter(function(x){return x.codigo===s[1]})[0];
+    baixar(nomeLimpo(d.nome).replace(/\s+/g,'_')+'_'+s[1]+'_'+de+'_a_'+ate+'.csv',[['Sensor','Grandeza','Data','Hora','Valor','Unidade']].concat(rs.map(function(r){var t=new Date(r.instante);return [nomeLimpo(d.nome),g?g.nome:s[1],t.toLocaleDateString('pt-BR'),t.toLocaleTimeString('pt-BR'),r.valor!=null?dec(r.valor):r.valor_texto,g&&g.unidade?g.unidade.replace('℃','°C'):'']})));
+  }catch(e){fail(e)}}
+};
+
+// ---------- sessão ----------
+async function sessao(session){
+  clearInterval(S.timer);
+  if(!session){S.perfil=null;S.perfis=[];render();return}
+  try{
+    S.perfis=(await q(sb.rpc('meu_perfil')))||[];
+    if(!S.perfis.length){el('app').innerHTML='<div class="login"><img src="logo-insiel.svg" alt="Insiel"><h1>Acesso não liberado</h1><p class="s">O e-mail '+esc(session.user.email)+' ainda não foi cadastrado. Fale com a Insiel.</p><button class="btn sec" style="width:100%" onclick="A.sair()">Sair</button></div>';return}
+    var pref=S.perfis.filter(function(p){return p.papel==='cliente'})[0];
+    S.perfil=pref||S.perfis[S.perfis.length-1];
+    await carregarBase();render();
+    S.timer=setInterval(function(){if(S.view==='geral')carregarBase().then(render).catch(function(){})},120000);
+  }catch(e){fail(e);el('app').innerHTML='<div class="login"><h1>Não foi possível carregar</h1><p class="s">'+esc(e.message)+'</p><button class="btn sec" style="width:100%" onclick="location.reload()">Tentar de novo</button></div>'}
+}
+sb.auth.onAuthStateChange(function(ev,session){if(ev==='INITIAL_SESSION'||ev==='SIGNED_IN'||ev==='SIGNED_OUT')sessao(session)});
+</script>
+</body>
+</html>
