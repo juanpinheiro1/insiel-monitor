@@ -107,6 +107,8 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
+// sempre em conexão segura (exceto em teste local)
+if(location.protocol==='http:'&&location.hostname!=='localhost'&&location.hostname!=='127.0.0.1')location.replace('https://'+location.host+location.pathname+location.search);
 var SB_URL='https://puepmnyffpfjttxmwfjt.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZXBtbnlmZnBmanR0eG13Zmp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NTMzMzksImV4cCI6MjEwNTIyOTMzOX0.6waSiEVZE0Fm2QraExivstM8qjzK7NGQ6698wmzHxjw';
 var sb=window.supabase.createClient(SB_URL,SB_KEY,{db:{schema:'iot'}});
@@ -158,7 +160,18 @@ async function carregarBase(){
   ]);
   S.locais=r[0];S.disp=r[1];S.grand={};r[2].forEach(function(g){(S.grand[g.dispositivo_id]=S.grand[g.dispositivo_id]||[]).push(g)});
   S.zonas=r[3];S.zd=r[4];S.faixas=r[5];S.tarifas=r[6];S.periodos=r[7];S.eventos=r[8];
-  if(!S.local||!S.locais.some(function(l){return l.id===S.local.id}))S.local=S.locais[0]||null;
+  // unidade inicial: a que tem mais aparelhos (evita abrir numa unidade ainda vazia)
+  if(!S.local||!S.locais.some(function(l){return l.id===S.local.id})){
+    var cont={};S.disp.forEach(function(d){if(d.ativo&&d.local_id)cont[d.local_id]=(cont[d.local_id]||0)+1});
+    S.local=S.locais.slice().sort(function(a,b){return (cont[b.id]||0)-(cont[a.id]||0)})[0]||null;
+  }
+}
+// zonas da unidade; sem zonas cadastradas, cada sensor de temperatura vira uma zona com o próprio nome
+function zonasLocal(){
+  var zs=S.zonas.filter(function(z){return z.local_id===S.local.id&&z.sensor_dispositivo_id});
+  if(zs.length)return zs;
+  var crit={};S.faixas.forEach(function(f){crit[f.dispositivo_id]=true});
+  return doLocal().filter(function(d){return tipo(d)==='tuya:wsdcg'&&!crit[d.id]}).map(function(d){return {id:'d-'+d.id,nome:nomeLimpo(d.nome),local_id:d.local_id,sensor_dispositivo_id:d.id}});
 }
 async function carregarDiario(dias){
   var m=medidor();S.diario=[];if(!m)return;
@@ -202,6 +215,15 @@ async function vGeral(){
   var kMes=0,cMes=0;S.diario.forEach(function(x){if(x.dia.slice(0,7)===mes){kMes+=Number(x.kwh);var t=tarifaEm(x.dia);if(t)cMes+=Number(x.kwh)*t}});
   var tHoje=tarifaEm(hoje),pot=m&&m.estado_atual?m.estado_atual.potencia_total:null;
   var eco=economia();
+  if(!m){
+    // unidade sem medidor de energia (ex.: só sensores): a temperatura vem primeiro
+    var cr0=criticos();
+    el('main').innerHTML='<div class="grid2"><div class="panel"><h2>Temperatura agora</h2><div class="zonas">'+zonasHtml()+'</div><p class="small muted" style="margin:12px 0 0">O histórico de cada sensor está na aba Conforto.</p></div>'+
+      '<div class="panel"><h2>Atenção</h2>'+avisos()+'</div></div>'+
+      (cr0.length?'<div class="panel" style="margin-top:14px"><div class="row between"><h2 style="margin:0">Estoque crítico</h2><button class="btn sec sm" onclick="A.ir(\'critico\')">Ver detalhes</button></div></div>':'')+
+      '<p class="small muted" style="margin-top:12px">Esta unidade não tem medidor de energia instalado, por isso os números de consumo não aparecem.</p>';
+    return;
+  }
   var h='<div class="kpis">'+
     '<div class="kpi"><div class="l">Consumo hoje</div><div class="v">'+n(dHoje?dHoje.kwh:0)+'<small>kWh</small></div><div class="d">'+(tHoje?reais((dHoje?dHoje.kwh:0)*tHoje):'tarifa não cadastrada')+' · até a última hora fechada</div></div>'+
     '<div class="kpi"><div class="l">Consumo no mês</div><div class="v">'+n(kMes,0)+'<small>kWh</small></div><div class="d">'+reais(cMes)+' estimados</div></div>'+
@@ -219,8 +241,8 @@ async function vGeral(){
 }
 function nomeLimpo(s){return String(s).replace(/^RDP\s+/,'')}
 function zonasHtml(){
-  var zs=S.zonas.filter(function(z){return z.local_id===S.local.id});
-  if(!zs.length)return '<div class="muted small">Nenhuma zona cadastrada.</div>';
+  var zs=zonasLocal();
+  if(!zs.length)return '<div class="muted small">Nenhum sensor de temperatura nesta unidade.</div>';
   return zs.map(function(z){var d=z.sensor_dispositivo_id?dispById(z.sensor_dispositivo_id):null,e=d&&d.estado_atual||{};
     return '<div class="zona"><div class="n">'+esc(z.nome)+'</div><div class="v">'+n(e.va_temperature)+' <span class="u">°C</span></div><div class="u">umidade '+n(e.va_humidity,0)+'% · '+(d?ago(d.ultima_leitura_em):'sem sensor')+'</div></div>'}).join('');
 }
@@ -292,7 +314,7 @@ function seg(chave,ops,view){return '<div class="seg">'+ops.map(function(o){retu
 
 // ---------- Conforto ----------
 async function vConforto(){
-  var zs=S.zonas.filter(function(z){return z.local_id===S.local.id&&z.sensor_dispositivo_id});
+  var zs=zonasLocal();
   var h='<div class="row between" style="margin-bottom:12px"><h1>Conforto</h1>'+seg('perConforto',[[1,'24 horas'],[7,'7 dias'],[30,'30 dias']],'conforto')+'</div>'+
     '<div class="panel"><h2>Temperatura por zona (°C)</h2><div class="chart"><canvas id="g-conf"></canvas></div><div id="g-conf-vazio"></div></div>'+
     '<div class="panel"><h2>Resumo do período</h2><div id="t-conf"><div class="empty">Carregando…</div></div></div>';
