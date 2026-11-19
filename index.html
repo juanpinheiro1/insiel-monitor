@@ -114,8 +114,8 @@ var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 var sb=window.supabase.createClient(SB_URL,SB_KEY,{db:{schema:'iot'}});
 
 var S={perfis:[],perfil:null,locais:[],local:null,view:'geral',disp:[],grand:{},zonas:[],zd:[],faixas:[],tarifas:[],periodos:[],eventos:[],
-       diario:[],perEnergia:30,diaSel:null,perConforto:1,perCritico:7,perPortas:7,charts:{},timer:null,cache:{}};
-var VIEWS=[['geral','Visão geral'],['energia','Energia'],['conforto','Conforto'],['critico','Estoque crítico'],['portas','Portas'],['relatorios','Relatórios']];
+       diario:[],perEnergia:30,diaSel:null,perLuz:1,perConforto:1,perCritico:7,perPortas:7,charts:{},timer:null,cache:{}};
+var VIEWS=[['geral','Visão geral'],['energia','Energia'],['iluminacao','Iluminação'],['conforto','Conforto'],['critico','Estoque crítico'],['portas','Portas'],['relatorios','Relatórios']];
 
 // ---------- utilitários ----------
 function el(id){return document.getElementById(id)}
@@ -137,6 +137,7 @@ function doLocal(){return S.disp.filter(function(d){return d.local_id===S.local.
 function medidor(){return doLocal().filter(function(d){return tipo(d)==='tuya:zndb'})[0]||null}
 function circuitos(){return doLocal().filter(function(d){return tipo(d)==='tuya:dlq'})}
 function portas(){return doLocal().filter(function(d){return tipo(d)==='tuya:mcs'})}
+function sensoresLuz(){return doLocal().filter(function(d){return tipo(d)==='tuya:ldcg'})}
 function criticos(){return S.faixas.map(function(f){var d=dispById(f.dispositivo_id);return d&&d.local_id===S.local.id?{d:d,f:f}:null}).filter(Boolean)}
 function tarifaEm(dia){var t=S.tarifas.filter(function(x){return (!x.local_id||x.local_id===S.local.id)&&x.vigente_de<=dia}).sort(function(a,b){return a.vigente_de<b.vigente_de?1:-1})[0];return t?Number(t.valor_kwh):null}
 function grafico(id,cfg){if(S.charts[id]){S.charts[id].destroy();delete S.charts[id]}var c=el(id);if(!c)return;S.charts[id]=new Chart(c,cfg)}
@@ -195,7 +196,7 @@ function render(){
     '<div class="rodape">Insiel Tecnologia Eletrônica · dados atualizados automaticamente · horários no fuso do seu navegador</div></main>';
   el('app').innerHTML=h;
   if(!S.local){el('main').innerHTML='<div class="panel empty">Nenhuma unidade cadastrada para este cliente.</div>';return}
-  ({geral:vGeral,energia:vEnergia,conforto:vConforto,critico:vCritico,portas:vPortas,relatorios:vRelatorios})[S.view]().catch(fail);
+  ({geral:vGeral,energia:vEnergia,iluminacao:vIluminacao,conforto:vConforto,critico:vCritico,portas:vPortas,relatorios:vRelatorios})[S.view]().catch(fail);
 }
 function renderLogin(){
   el('app').innerHTML='<div class="login"><img src="logo-insiel.svg" alt="Insiel"><h1>Insiel Monitor</h1><p class="s">Portal do cliente</p>'+
@@ -232,6 +233,7 @@ async function vGeral(){
   h+='<div class="grid2"><div class="panel"><div class="row between"><h2 style="margin:0">Consumo diário (kWh)</h2><span class="small muted">últimos 30 dias</span></div><div class="chart" style="margin-top:10px"><canvas id="g-dia"></canvas></div><div id="g-dia-vazio"></div></div>'+
     '<div class="panel"><h2>Atenção</h2>'+avisos()+'</div></div>';
   h+='<div class="panel" style="margin-top:14px"><h2>Temperatura por zona</h2><div class="zonas">'+zonasHtml()+'</div></div>';
+  if(sensoresLuz().length||circuitos().length)h+='<div class="panel"><div class="row between"><h2 style="margin:0">Iluminação</h2><button class="btn sec sm" onclick="A.ir(\'iluminacao\')">Ver detalhes</button></div><div class="zonas" style="margin-top:10px">'+luzHtml()+'</div></div>';
   var cr=criticos();
   if(cr.length)h+='<div class="panel"><div class="row between"><h2 style="margin:0">Estoque crítico</h2><button class="btn sec sm" onclick="A.ir(\'critico\')">Ver detalhes</button></div><div class="zonas" style="margin-top:10px">'+cr.map(function(x){
     var v=x.d.estado_atual?x.d.estado_atual[x.f.codigo]:null,fora=v!=null&&((x.f.maximo!=null&&v>x.f.maximo)||(x.f.minimo!=null&&v<x.f.minimo));
@@ -311,6 +313,48 @@ async function vEnergia(){
     '<tr><td>Demais cargas (climatização, refrigeração e outras)</td><td class="n">'+n(Math.max(0,tot-somaC),1)+'</td><td class="n">'+(tot>0?n(Math.max(0,tot-somaC)/tot*100,1)+'%':'–')+'</td><td></td></tr></table></div>';
 }
 function seg(chave,ops,view){return '<div class="seg">'+ops.map(function(o){return '<button class="'+(S[chave]===o[0]?'on':'')+'" onclick="A.per(\''+chave+'\','+o[0]+',\''+view+'\')">'+o[1]+'</button>'}).join('')+'</div>'}
+
+// ---------- Iluminação ----------
+function luzHtml(){
+  return sensoresLuz().map(function(d){var v=d.estado_atual?d.estado_atual.bright_value:null;
+    return '<div class="zona"><div class="n">Luz natural · '+esc(nomeLimpo(d.nome).replace(/^Lux\s+/,''))+'</div><div class="v">'+n(v,0)+' <span class="u">lux</span></div><div class="u">'+ago(d.ultima_leitura_em)+'</div></div>'}).join('')+
+    circuitos().map(function(c){var on=c.estado_atual&&c.estado_atual.switch;
+    return '<div class="zona"><div class="n">'+esc(nomeLimpo(c.nome))+'</div><div class="v" style="font-size:18px">'+(on===true?'Ligado':on===false?'Desligado':'–')+'</div><div class="u">'+(c.estado_atual&&c.estado_atual.cur_power!=null?n(c.estado_atual.cur_power,0)+' W agora':'')+'</div></div>'}).join('');
+}
+async function vIluminacao(){
+  var lx=sensoresLuz(),cs=circuitos();
+  var h='<div class="row between" style="margin-bottom:12px"><div><h1>Iluminação</h1><div class="small muted">Luz natural junto à vitrine e circuitos de iluminação medidos</div></div>'+seg('perLuz',[[1,'24 horas'],[7,'7 dias']],'iluminacao')+'</div>';
+  if(!lx.length&&!cs.length){el('main').innerHTML=h+'<div class="panel empty">Nenhum sensor de luminosidade ou circuito de iluminação nesta unidade.</div>';return}
+  var ligados=cs.filter(function(c){return c.estado_atual&&c.estado_atual.switch===true}).length;
+  h+='<div class="kpis">'+lx.map(function(d){var v=d.estado_atual?d.estado_atual.bright_value:null;return '<div class="kpi"><div class="l">Luz natural agora</div><div class="v">'+n(v,0)+'<small>lux</small></div><div class="d">'+esc(nomeLimpo(d.nome))+' · '+ago(d.ultima_leitura_em)+'</div></div>'}).join('')+
+    (cs.length?'<div class="kpi"><div class="l">Circuitos ligados</div><div class="v">'+ligados+'<small>de '+cs.length+'</small></div><div class="d">iluminação medida</div></div><div class="kpi"><div class="l">Consumo da iluminação</div><div class="v" id="k-luz">–</div><div class="d" id="k-luz-d">no período selecionado</div></div>':'')+'</div>';
+  if(lx.length)h+='<div class="panel"><h2>Luz natural (lux)</h2><div class="chart"><canvas id="g-lux"></canvas></div><div id="g-lux-vazio"></div><p class="small muted" style="margin:8px 0 0">'+(S.perLuz===1?'Média a cada 10 minutos.':'Média por hora.')+' É esta medida que permite apagar a luz da vitrine quando há claridade suficiente.</p></div>';
+  if(cs.length)h+='<div class="panel"><h2>Circuitos de iluminação</h2><div id="t-luz"><div class="empty">Carregando…</div></div></div>';
+  el('main').innerHTML=h;
+  var fim=new Date(),ini=new Date(fim.getTime()-S.perLuz*864e5);
+  if(lx.length){
+    var sets=[];
+    for(var i=0;i<lx.length;i++){
+      var rs=await q(sb.rpc('serie',{p_dispositivo_id:lx[i].id,p_codigo:'bright_value',p_inicio:ini.toISOString(),p_fim:fim.toISOString(),p_minutos:S.perLuz===1?10:60}));
+      sets.push({label:nomeLimpo(lx[i].nome),data:rs.map(function(r){return {x:new Date(r.instante).getTime(),y:Number(r.media)}}),borderColor:CORES[(i+3)%CORES.length],backgroundColor:CORES[(i+3)%CORES.length]+'22',fill:true,borderWidth:2,pointRadius:0,tension:.25});
+    }
+    if(!el('g-lux'))return;
+    if(sets.some(function(s){return s.data.length})){
+      var fmt=S.perLuz===1?function(v){return new Date(v).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}:function(v){return new Date(v).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})};
+      grafico('g-lux',{type:'line',data:{datasets:sets},options:{responsive:true,maintainAspectRatio:false,animation:false,parsing:false,plugins:{legend:{display:sets.length>1,labels:{color:css('--text'),boxWidth:12}},tooltip:{callbacks:{title:function(c){return dataHora(c[0].parsed.x)},label:function(c){return n(c.parsed.y,0)+' lux'}}}},
+        scales:{x:{type:'linear',min:ini.getTime(),max:fim.getTime(),ticks:{color:css('--muted'),maxTicksLimit:8,callback:fmt},grid:{display:false}},y:{beginAtZero:true,ticks:{color:css('--muted')},grid:{color:css('--line')}}}}});
+    }else{el('g-lux').parentNode.style.display='none';el('g-lux-vazio').innerHTML='<div class="empty">Sem leituras no período.</div>'}
+  }
+  if(cs.length){
+    var cd=await q(sb.from('v_consumo_diario').select('dispositivo_id,kwh,kw_max').in('dispositivo_id',cs.map(function(c){return c.id})).gte('dia',isoDia(diasAtras(S.perLuz))));
+    var tot=0,custo=0,t=tarifaEm(isoDia(new Date()));
+    var linhas=cs.map(function(c){var k=0,mx=null;cd.forEach(function(r){if(r.dispositivo_id===c.id){k+=Number(r.kwh);if(r.kw_max!=null&&(mx==null||Number(r.kw_max)>mx))mx=Number(r.kw_max)}});tot+=k;return {c:c,kwh:k,max:mx}});
+    if(!el('t-luz'))return;
+    el('k-luz').innerHTML=n(tot,1)+'<small>kWh</small>';el('k-luz-d').textContent=(t?reais(tot*t)+' · ':'')+(S.perLuz===1?'desde ontem':'últimos 7 dias');
+    el('t-luz').innerHTML='<div class="tblwrap"><table><tr><th>Circuito</th><th>Agora</th><th class="n">Potência agora</th><th class="n">kWh no período</th><th class="n">Maior demanda</th></tr>'+linhas.map(function(x){var e=x.c.estado_atual||{};
+      return '<tr><td>'+esc(nomeLimpo(x.c.nome))+'</td><td>'+(e.switch===true?'<span class="chip ok">ligado</span>':e.switch===false?'<span class="chip muted">desligado</span>':'–')+'</td><td class="n">'+(e.cur_power!=null?n(e.cur_power,0)+' W':'–')+'</td><td class="n">'+n(x.kwh,2)+'</td><td class="n">'+(x.max!=null?n(x.max,2)+' kW':'–')+'</td></tr>'}).join('')+'</table></div>';
+  }
+}
 
 // ---------- Conforto ----------
 async function vConforto(){
@@ -414,7 +458,7 @@ async function vRelatorios(){
   var ops=dl.map(function(d){return (S.grand[d.id]||[]).filter(function(g){return g.papel==='leitura'}).map(function(g){return '<option value="'+d.id+'|'+g.codigo+'">'+esc(nomeLimpo(d.nome))+' · '+esc(g.nome)+'</option>'}).join('')}).join('');
   el('main').innerHTML='<h1 style="margin-bottom:12px">Relatórios</h1>'+
     '<div class="panel"><h2>Relatórios para imprimir ou salvar em PDF</h2><p class="small muted" style="margin-top:-4px">Abra a visão desejada, escolha o período e use o botão abaixo. Na janela de impressão, selecione "Salvar como PDF".</p>'+
-    '<div class="row"><button class="btn sec" onclick="A.imprimir(\'energia\')">Energia</button><button class="btn sec" onclick="A.imprimir(\'critico\')">Estoque crítico</button><button class="btn sec" onclick="A.imprimir(\'conforto\')">Conforto</button><button class="btn sec" onclick="A.imprimir(\'portas\')">Portas</button></div></div>'+
+    '<div class="row"><button class="btn sec" onclick="A.imprimir(\'energia\')">Energia</button><button class="btn sec" onclick="A.imprimir(\'iluminacao\')">Iluminação</button><button class="btn sec" onclick="A.imprimir(\'critico\')">Estoque crítico</button><button class="btn sec" onclick="A.imprimir(\'conforto\')">Conforto</button><button class="btn sec" onclick="A.imprimir(\'portas\')">Portas</button></div></div>'+
     '<div class="panel"><h2>Exportar dados para planilha</h2><div class="row" style="align-items:flex-end">'+
     '<div class="fld"><label>De</label><input id="x-de" type="date" value="'+ini+'"></div><div class="fld"><label>Até</label><input id="x-ate" type="date" value="'+hoje+'"></div>'+
     '<button class="btn" onclick="A.exportarConsumo()">Consumo por hora</button></div>'+
